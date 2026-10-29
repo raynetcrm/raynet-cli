@@ -1,0 +1,51 @@
+# Copyright 2026-present RAYNET s.r.o.
+# SPDX-License-Identifier: MIT
+
+name: Bug report
+description: Something in raynet doesn't work as expected.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Don't paste API keys, bearer tokens or passwords** anywhere in this issue, including
+        command lines, `--verbose` output and config files. Replace them with `XXXX`.
+
+        For a security vulnerability, don't open an issue: see [SECURITY.md](https://github.com/raynetcrm/raynet-cli/blob/main/SECURITY.md).
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The output of `raynet --version`.
+      placeholder: raynet version 0.1.0
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      description: The OS and CPU architecture.
+      placeholder: macOS 26 on arm64
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command
+      description: The command you ran, with any credentials replaced by `XXXX`.
+      render: sh
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened
+      description: The output or error you got. `raynet -v ...` adds the request and response lines.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true

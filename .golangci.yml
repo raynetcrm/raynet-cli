@@ -1,0 +1,22 @@
+# Copyright 2026-present RAYNET s.r.o.
+# SPDX-License-Identifier: MIT
+
+version: "2"
+
+linters:
+  default: standard
+  enable:
+    - revive
+    - unconvert
+    - misspell
+    - gocritic
+  exclusions:
+    # Unchecked fmt.Fprint* to the CLI's stdout/stderr writers, Close() etc.;
+    # golangci-lint v1's default exclusions.
+    presets:
+      - std-error-handling
+
+formatters:
+  enable:
+    - gofmt
+    - goimports

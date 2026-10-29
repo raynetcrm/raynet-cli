@@ -1,0 +1,11 @@
+# Copyright 2026-present RAYNET s.r.o.
+# SPDX-License-Identifier: MIT
+
+# Single source of truth for the toolchain: local dev, CI and the
+# Dockerfile's builder stage all install from this file. Exact versions so
+# Renovate's mise manager can bump them.
+[tools]
+go = "1.27.3"
+golangci-lint = "2.15.0"
+gotestsum = "1.13.0"
+goreleaser = "2.18.3"
