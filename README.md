@@ -151,9 +151,9 @@ raynet --host app.raynet.cz --token XXXX api /company/
 |---|---|---|---|
 | `company` | | lock, unlock, invalidate, revalidate, tag, untag | `address` (+ set-primary, set-contact), `relationship` |
 | `person` | | lock, unlock, invalidate, revalidate, tag, untag | `relationship` (+ set-primary; no list) |
-| `lead` | | lock, unlock, convert, tag, untag | |
-| `business-case` | `businessCase`, `bc` | lock, unlock, invalidate, revalidate, tag, untag | `item` |
-| `offer` | | as business-case, plus sync, unsync | `item` |
+| `lead` | | lock, unlock, highlight, unhighlight, convert, tag, untag | |
+| `business-case` | `businessCase`, `bc` | lock, unlock, highlight, unhighlight, invalidate, revalidate, tag, untag | `item` |
+| `offer` | | lock, unlock, invalidate, revalidate, sync, unsync, tag, untag | `item` |
 | `sales-order` | `salesOrder`, `so` | as offer | `item` |
 | `project` | | lock, unlock, invalidate, revalidate, tag, untag | |
 | `invoice` | `invoiceLight` | lock, unlock, tag, untag | |

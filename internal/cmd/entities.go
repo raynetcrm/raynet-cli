@@ -50,9 +50,9 @@ var entityTable = []entitySpec{
 		columns:     []string{"id", "code", "topic", "companyName", "leadPhase.code01", "priority", "owner.fullName"},
 		verbs:       verbsCRUD,
 		ext:         true,
-		listFilters: "topic[LIKE], companyName[LIKE], lastName, contactInfo.email, regNumber, status (B_ACTIVE, G_STORNO, D_DONE), leadPhase, leadDate, owner, tags",
+		listFilters: "topic[LIKE], companyName[LIKE], lastName, contactInfo.email, regNumber, status (B_ACTIVE, G_STORNO, D_DONE), leadPhase, leadDate, owner, tags, highlighted, searchTel1Tel2",
 		fields:      leadFields,
-		actions: []action{actLock, actUnlock, {
+		actions: []action{actLock, actUnlock, actHighlight, actUnhighlight, {
 			use: "convert", short: "Convert %s by linking it to an existing client, contact person or business case",
 			done: "Converted", method: http.MethodPost, suffix: "convert/", body: true, fields: leadConvertFields,
 		}, actTag, actUntag},
@@ -67,10 +67,10 @@ var entityTable = []entitySpec{
 		verbs:       verbsCRUD,
 		ext:         true,
 		withItems:   true,
-		listFilters: "name[LIKE], code, company, project, status (B_ACTIVE, E_WIN, F_LOST, G_STORNO), businessCasePhase, category, validFrom, validTill, owner",
+		listFilters: "name[LIKE], code, company, project, status (B_ACTIVE, E_WIN, F_LOST, G_STORNO), businessCasePhase, category, validFrom, validTill, owner, highlighted",
 		fields:      businessCaseFields,
 		nested:      []nestedSpec{lineItems},
-		actions:     []action{actLock, actUnlock, actInvalidate, actRevalidate, actTag, actUntag},
+		actions:     []action{actLock, actUnlock, actHighlight, actUnhighlight, actInvalidate, actRevalidate, actTag, actUntag},
 	},
 	{
 		use:         "offer",

@@ -56,13 +56,12 @@ clean:
 # Fails if a published file contains a denylisted string, then runs the tests
 # of the internal scripts. The scripts and .public-denylist aren't part
 # of the published source, so this does nothing without the denylist; with it,
-# a missing script fails loudly. CI's `check` job runs the same two commands
-# without make; keep them in step.
+# a missing script fails loudly. The steps live in scripts/public-check.sh,
+# which CI's `check` job calls without make.
 .PHONY: public-check
 public-check:
 	@if [ -f .public-denylist ]; then \
-		bash scripts/check-public-denylist.sh && \
-		for t in scripts/*_test.sh; do bash "$$t" || exit 1; done; \
+		bash scripts/public-check.sh; \
 	fi
 
 # Everything CI runs, for a quick local pre-push check.

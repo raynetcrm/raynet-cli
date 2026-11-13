@@ -135,7 +135,9 @@ a dotted path reaches into nested objects (owner.fullName, company.name), and fl
 that contain a dot (rowInfo.createdAt, rowInfo.updatedBy) work as written.
 
 view prints the record as JSON. create, update, delete and actions print the API's JSON
-response, so --jq .data.id gives a new record's id.
+response, so --jq .data.id gives a new record's id. Every list item and view of an entity with
+external ids carries them in an array named extIds, rendered empty when the record has none, so
+raynet lead list --columns id,extIds correlates CRM records with an external system's ids.
 
   --json        print the raw JSON records instead of a table
   --jq expr     filter the JSON through a jq expression (needs jq on PATH); implies JSON

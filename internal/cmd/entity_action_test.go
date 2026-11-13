@@ -84,6 +84,159 @@ func TestEntityAction_TagSendsJoinedNames(t *testing.T) {
 	}
 }
 
+func TestEntityAction_HighlightSendsTrueMarker(t *testing.T) {
+	h := newHarness(t)
+	h.terminal = true
+	h.api.reply("POST", "/lead/42/highlight", 200, `{"success":true}`)
+
+	res := h.run("lead", "highlight", "42")
+
+	if res.err != nil {
+		t.Fatalf("err = %v", res.err)
+	}
+	req := h.api.lastRequest()
+	if req.method != "POST" || req.path != "/lead/42/highlight" {
+		t.Errorf("request = %s %s, want POST /lead/42/highlight", req.method, req.path)
+	}
+	if got, want := req.json(t), map[string]any{"highlighted": true}; !reflect.DeepEqual(got, want) {
+		t.Errorf("body = %v, want %v", got, want)
+	}
+	if res.stderr != "Highlighted lead 42\n" {
+		t.Errorf("stderr = %q, want %q", res.stderr, "Highlighted lead 42\n")
+	}
+}
+
+func TestEntityAction_UnhighlightSendsFalseMarker(t *testing.T) {
+	h := newHarness(t)
+	h.terminal = true
+	h.api.reply("POST", "/lead/42/highlight", 200, `{"success":true}`)
+
+	res := h.run("lead", "unhighlight", "42")
+
+	if res.err != nil {
+		t.Fatalf("err = %v", res.err)
+	}
+	req := h.api.lastRequest()
+	if req.method != "POST" || req.path != "/lead/42/highlight" {
+		t.Errorf("request = %s %s, want POST /lead/42/highlight", req.method, req.path)
+	}
+	if got, want := req.json(t), map[string]any{"highlighted": false}; !reflect.DeepEqual(got, want) {
+		t.Errorf("body = %v, want %v", got, want)
+	}
+	if res.stderr != "Unhighlighted lead 42\n" {
+		t.Errorf("stderr = %q, want %q", res.stderr, "Unhighlighted lead 42\n")
+	}
+}
+
+func TestEntityAction_HighlightResolvesExternalID(t *testing.T) {
+	tests := []struct {
+		action   string
+		wantBody map[string]any
+	}{
+		{"highlight", map[string]any{"highlighted": true}},
+		{"unhighlight", map[string]any{"highlighted": false}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.action, func(t *testing.T) {
+			h := newHarness(t)
+			h.api.reply("GET", "/lead/ext/erp-7/", 200, `{"success":true,"data":{"id":42}}`)
+			h.api.reply("POST", "/lead/42/highlight", 200, `{"success":true}`)
+
+			res := h.run("lead", tt.action, "ext:erp-7")
+
+			if res.err != nil {
+				t.Fatalf("err = %v", res.err)
+			}
+			reqs := h.api.requests()
+			if len(reqs) != 2 {
+				t.Fatalf("fake API received %d requests, want the ext lookup and the POST", len(reqs))
+			}
+			if reqs[0].method != "GET" || reqs[0].path != "/lead/ext/erp-7/" {
+				t.Errorf("first request = %s %s, want GET /lead/ext/erp-7/", reqs[0].method, reqs[0].path)
+			}
+			if reqs[1].method != "POST" || reqs[1].path != "/lead/42/highlight" {
+				t.Errorf("second request = %s %s, want POST /lead/42/highlight", reqs[1].method, reqs[1].path)
+			}
+			if got := reqs[1].json(t); !reflect.DeepEqual(got, tt.wantBody) {
+				t.Errorf("body = %v, want %v", got, tt.wantBody)
+			}
+		})
+	}
+}
+
+func TestEntityAction_HighlightOnBusinessCasePath(t *testing.T) {
+	tests := []struct {
+		action     string
+		wantBody   map[string]any
+		wantStderr string
+	}{
+		{"highlight", map[string]any{"highlighted": true}, "Highlighted business-case 42\n"},
+		{"unhighlight", map[string]any{"highlighted": false}, "Unhighlighted business-case 42\n"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.action, func(t *testing.T) {
+			h := newHarness(t)
+			h.terminal = true
+			h.api.reply("POST", "/businessCase/42/highlight", 200, `{"success":true}`)
+
+			res := h.run("business-case", tt.action, "42")
+
+			if res.err != nil {
+				t.Fatalf("err = %v", res.err)
+			}
+			req := h.api.lastRequest()
+			if req.method != "POST" || req.path != "/businessCase/42/highlight" {
+				t.Errorf("request = %s %s, want POST /businessCase/42/highlight", req.method, req.path)
+			}
+			if got := req.json(t); !reflect.DeepEqual(got, tt.wantBody) {
+				t.Errorf("body = %v, want %v", got, tt.wantBody)
+			}
+			if res.stderr != tt.wantStderr {
+				t.Errorf("stderr = %q, want %q", res.stderr, tt.wantStderr)
+			}
+		})
+	}
+}
+
+// The highlight endpoint exists on lead and business case only, so only they
+// list the actions.
+func TestHighlightActions_ListedOnlyOnLeadAndBusinessCase(t *testing.T) {
+	for _, entity := range []string{"lead", "business-case"} {
+		t.Run(entity, func(t *testing.T) {
+			h := newHarness(t)
+
+			res := h.run(entity, "--help")
+
+			if res.err != nil {
+				t.Fatalf("err = %v", res.err)
+			}
+			got := subcommands(res.stdout)
+			for _, name := range []string{"highlight", "unhighlight"} {
+				if !slices.Contains(got, name) {
+					t.Errorf("%s help lists %v, want %s", entity, got, name)
+				}
+			}
+		})
+	}
+	for _, entity := range []string{"company", "offer", "task"} {
+		t.Run(entity, func(t *testing.T) {
+			h := newHarness(t)
+
+			res := h.run(entity, "--help")
+
+			if res.err != nil {
+				t.Fatalf("err = %v", res.err)
+			}
+			got := subcommands(res.stdout)
+			for _, name := range []string{"highlight", "unhighlight"} {
+				if slices.Contains(got, name) {
+					t.Errorf("%s help lists %v, want no %s", entity, got, name)
+				}
+			}
+		})
+	}
+}
+
 func TestEntityAction_TagRequiresTagNames(t *testing.T) {
 	h := newHarness(t)
 

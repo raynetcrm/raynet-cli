@@ -28,7 +28,7 @@ func TestHelpTopics_ReachableViaHelp(t *testing.T) {
 			"yyyy-MM-dd", "yyyy-MM-dd HH:mm", "ISO 8601", "--fulltext", "--sort",
 		}},
 		{"fields", []string{"-f", "-F", "@file", "null", "[]", "addresses[][address][city]=Brno", "--input -", "raynet api"}},
-		{"output", []string{"--json", "--jq", "--columns", "owner.fullName", "rowInfo.createdAt", "terminal", "stderr", "tab-separated"}},
+		{"output", []string{"--json", "--jq", "--columns", "owner.fullName", "rowInfo.createdAt", "terminal", "stderr", "tab-separated", "extIds"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.topic, func(t *testing.T) {

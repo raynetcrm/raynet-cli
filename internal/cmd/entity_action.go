@@ -16,12 +16,16 @@ import (
 // The record actions shared by many entities; a row lists the ones its API
 // supports, e.g. actions: []action{actLock, actUnlock, actTag, actUntag}.
 var (
-	actLock       = action{use: "lock", short: "Lock %s record against edits", done: "Locked", method: http.MethodPost, suffix: "lock"}
-	actUnlock     = action{use: "unlock", short: "Unlock %s record", done: "Unlocked", method: http.MethodPost, suffix: "unlock"}
-	actInvalidate = action{use: "invalidate", short: "Mark %s record as no longer valid", done: "Invalidated", method: http.MethodPost, suffix: "invalid"}
-	actRevalidate = action{use: "revalidate", short: "Mark %s record as valid again after invalidate", done: "Revalidated", method: http.MethodPost, suffix: "valid"}
-	actTag        = action{use: "tag", short: "Add tags to %s record", done: "Tagged", method: http.MethodPut, suffix: "tag/", tags: true}
-	actUntag      = action{use: "untag", short: "Remove tags from %s record", done: "Untagged", method: http.MethodDelete, suffix: "tag/", tags: true}
+	actLock   = action{use: "lock", short: "Lock %s record against edits", done: "Locked", method: http.MethodPost, suffix: "lock"}
+	actUnlock = action{use: "unlock", short: "Unlock %s record", done: "Unlocked", method: http.MethodPost, suffix: "unlock"}
+	// actHighlight and actUnhighlight exist on lead and business case only;
+	// both POST /<path>/<id>/highlight and differ only by their body.
+	actHighlight   = action{use: "highlight", short: "Mark %s record as highlighted, so it stands out in the CRM", done: "Highlighted", method: http.MethodPost, suffix: "highlight", staticBody: map[string]any{"highlighted": true}}
+	actUnhighlight = action{use: "unhighlight", short: "Remove the highlight from %s record", done: "Unhighlighted", method: http.MethodPost, suffix: "highlight", staticBody: map[string]any{"highlighted": false}}
+	actInvalidate  = action{use: "invalidate", short: "Mark %s record as no longer valid", done: "Invalidated", method: http.MethodPost, suffix: "invalid"}
+	actRevalidate  = action{use: "revalidate", short: "Mark %s record as valid again after invalidate", done: "Revalidated", method: http.MethodPost, suffix: "valid"}
+	actTag         = action{use: "tag", short: "Add tags to %s record", done: "Tagged", method: http.MethodPut, suffix: "tag/", tags: true}
+	actUntag       = action{use: "untag", short: "Remove tags from %s record", done: "Untagged", method: http.MethodDelete, suffix: "tag/", tags: true}
 	// actSync and actUnsync exist on offers and sales orders only.
 	actSync   = action{use: "sync", short: "Sync %s with its business case, overwriting the business case's line items", done: "Synced", method: http.MethodPost, suffix: "sync"}
 	actUnsync = action{use: "unsync", short: "Stop syncing %s with its business case", done: "Unsynced", method: http.MethodDelete, suffix: "sync"}
@@ -53,13 +57,16 @@ func newActionCmd(a *app, s *entitySpec, act action) *cobra.Command {
 		Args:    args,
 		RunE: func(_ *cobra.Command, args []string) error {
 			var b any
-			if act.tags {
+			switch {
+			case act.tags:
 				b = map[string]any{"tag": strings.Join(args[1:], ",")}
-			} else if act.body {
+			case act.body:
 				var err error
 				if b, err = body.body(a.stdin); err != nil {
 					return err
 				}
+			case act.staticBody != nil:
+				b = act.staticBody
 			}
 			cl, err := a.resolveClient()
 			if err != nil {

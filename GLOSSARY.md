@@ -42,6 +42,10 @@ _Avoid_: enum, enumeration (fixed values defined by the CRM itself), lookup
 A free-text label on a record, from one catalog shared by all entities.
 _Avoid_: label, štítek
 
+**Highlight**:
+A user-set marker on a lead or business case that makes the record stand out in the CRM interface; not a workflow state.
+_Avoid_: starred, pinned, featured
+
 **External id**:
 A caller-assigned identifier for a record, used to look it up from another system.
 _Avoid_: extId (in prose), foreign key

@@ -216,6 +216,27 @@ func TestEntityList_ColumnsSelectsDottedPaths(t *testing.T) {
 	}
 }
 
+// Entities with external ids carry extIds on every list item; the chosen
+// column renders the array, a record without any renders empty.
+func TestEntityList_ColumnsRendersExtIds(t *testing.T) {
+	h := newHarness(t)
+	h.api.reply("GET", "/lead/", 200, `{"success":true,"totalCount":2,"data":[
+		{"id":1,"topic":"New e-shop","extIds":["erp-17","crm-import"]},
+		{"id":2,"topic":"Cold call","extIds":null}]}`)
+
+	res := h.run("lead", "list", "--columns", "id,extIds")
+
+	if res.err != nil {
+		t.Fatalf("err = %v", res.err)
+	}
+	want := "id\textIds\n" +
+		"1\t[\"erp-17\",\"crm-import\"]\n" +
+		"2\t\n"
+	if res.stdout != want {
+		t.Errorf("stdout =\n%q\nwant\n%q", res.stdout, want)
+	}
+}
+
 func TestEntityList_JSONPrintsRecords(t *testing.T) {
 	h := newHarness(t)
 	h.api.reply("GET", "/company/", 200, `{"success":true,"totalCount":1,"data":[{"id":1,"name":"Acme"}]}`)

@@ -24,8 +24,8 @@ var businessEntities = []struct {
 	actions []string
 	nested  []string
 }{
-	{"lead", "lead", nil, "Lead", []string{"lock", "unlock", "convert", "tag", "untag"}, nil},
-	{"business-case", "businessCase", []string{"businessCase", "bc"}, "BusinessCase", []string{"lock", "unlock", "invalidate", "revalidate", "tag", "untag"}, []string{"item"}},
+	{"lead", "lead", nil, "Lead", []string{"lock", "unlock", "highlight", "unhighlight", "convert", "tag", "untag"}, nil},
+	{"business-case", "businessCase", []string{"businessCase", "bc"}, "BusinessCase", []string{"lock", "unlock", "highlight", "unhighlight", "invalidate", "revalidate", "tag", "untag"}, []string{"item"}},
 	{"offer", "offer", nil, "Offer", []string{"lock", "unlock", "invalidate", "revalidate", "sync", "unsync", "tag", "untag"}, []string{"item"}},
 	{"sales-order", "salesOrder", []string{"salesOrder", "so"}, "SalesOrder", []string{"lock", "unlock", "invalidate", "revalidate", "sync", "unsync", "tag", "untag"}, []string{"item"}},
 	{"project", "project", nil, "Project", []string{"lock", "unlock", "invalidate", "revalidate", "tag", "untag"}, nil},
@@ -156,15 +156,17 @@ func TestBusinessEntity_OffersExactlyTheActionsAndNestedCollectionsItsAPISupport
 
 func TestBusinessEntity_ActionsCallTheirEndpoints(t *testing.T) {
 	endpoints := map[string]struct{ method, suffix string }{
-		"lock":       {"POST", "lock"},
-		"unlock":     {"POST", "unlock"},
-		"invalidate": {"POST", "invalid"},
-		"revalidate": {"POST", "valid"},
-		"sync":       {"POST", "sync"},
-		"unsync":     {"DELETE", "sync"},
-		"tag":        {"PUT", "tag/"},
-		"untag":      {"DELETE", "tag/"},
-		"convert":    {"POST", "convert/"},
+		"lock":        {"POST", "lock"},
+		"unlock":      {"POST", "unlock"},
+		"highlight":   {"POST", "highlight"},
+		"unhighlight": {"POST", "highlight"}, // the API has no unhighlight route; false does that
+		"invalidate":  {"POST", "invalid"},
+		"revalidate":  {"POST", "valid"},
+		"sync":        {"POST", "sync"},
+		"unsync":      {"DELETE", "sync"},
+		"tag":         {"PUT", "tag/"},
+		"untag":       {"DELETE", "tag/"},
+		"convert":     {"POST", "convert/"},
 	}
 	for _, e := range businessEntities {
 		for _, act := range e.actions {
@@ -304,6 +306,48 @@ func TestBusinessEntity_ViewWebOpensRecordByWebName(t *testing.T) {
 	}
 }
 
+// List help names the worthwhile --filter attributes. The API has the
+// highlighted filter on lead and business case only, and searchTel1Tel2 on
+// lead only, so company's help must not offer them.
+func TestEntityList_FilterHelpMentionsHighlightedWhereTheAPIHasIt(t *testing.T) {
+	tests := []struct {
+		entity     string
+		want       []string
+		wantAbsent []string
+	}{
+		{"lead", []string{"highlighted", "searchTel1Tel2"}, nil},
+		{"business-case", []string{"highlighted"}, []string{"searchTel1Tel2"}},
+		{"company", nil, []string{"highlighted", "searchTel1Tel2"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.entity, func(t *testing.T) {
+			h := newHarness(t)
+
+			res := h.run(tt.entity, "list", "--help")
+
+			if res.err != nil {
+				t.Fatalf("err = %v", res.err)
+			}
+			_, rest, found := strings.Cut(res.stdout, "Useful filters: ")
+			if !found {
+				t.Fatalf("help has no useful filters:\n%s", res.stdout)
+			}
+			line, _, _ := strings.Cut(rest, "\n")
+			filters := strings.Split(line, ", ")
+			for _, w := range tt.want {
+				if !slices.Contains(filters, w) {
+					t.Errorf("useful filters = %q, want %s", line, w)
+				}
+			}
+			for _, w := range tt.wantAbsent {
+				if slices.Contains(filters, w) {
+					t.Errorf("useful filters = %q, want no %s", line, w)
+				}
+			}
+		})
+	}
+}
+
 func TestBusinessEntity_CreateHelpListsFieldReference(t *testing.T) {
 	tests := []struct {
 		entity string
@@ -312,9 +356,13 @@ func TestBusinessEntity_CreateHelpListsFieldReference(t *testing.T) {
 		{"lead", []string{
 			`^  topic +string +required +subject$`,
 			`^  priority +string +required +priority; values: MINOR, DEFAULT, CRITICAL$`,
+			`^  highlighted +bool +read-only; set it with the highlight and unhighlight actions$`,
 			`^  tags +string +comma-separated tag names$`,
 		}},
-		{"business-case", []string{`^  company +id +required +client; points to: company$`}},
+		{"business-case", []string{
+			`^  company +id +required +client; points to: company$`,
+			`^  highlighted +bool +read-only; set it with the highlight and unhighlight actions$`,
+		}},
 		{"offer", []string{`^  businessCase +id +required +business case; points to: business-case$`}},
 		{"sales-order", []string{`^  salesOrderStatus +id +.*codelist: salesOrderStatus$`}},
 		{"project", []string{`^  projectStatus +id +.*codelist: projectStatus$`}},

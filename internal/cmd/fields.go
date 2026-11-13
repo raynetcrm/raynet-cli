@@ -14,6 +14,9 @@ var (
 
 	ownerField = field{name: "owner", kind: kindID, ref: "user", help: "owner (user's person id)"}
 	tagsField  = field{name: "tags", kind: kindArray, help: "tag names, e.g. [\"vip\",\"2026\"]"}
+	// highlighted is not a request-body field: the body mappers ignore it.
+	// It is on lead and business case only, listed so help can mark it read-only.
+	highlightedField = field{name: "highlighted", kind: kindBool, help: "read-only; set it with the highlight and unhighlight actions"}
 )
 
 var companyFields = []field{
@@ -76,6 +79,7 @@ var leadFields = []field{
 	{name: "leadDate", kind: kindDate, help: "date the lead was received, yyyy-MM-dd"},
 	{name: "leadPerson", kind: kindBool, help: "true if a natural person, false if a company"},
 	{name: "notice", kind: kindString, help: "note"},
+	highlightedField,
 	{name: "tags", kind: kindString, help: "comma-separated tag names"},
 }
 
@@ -96,6 +100,7 @@ var businessCaseFields = []field{
 	{name: "project", kind: kindID, ref: "project", help: "project the business case belongs to"},
 	{name: "items", kind: kindArray, help: "line items, see `item add --help`"},
 	{name: "description", kind: kindString, help: "note"},
+	highlightedField,
 	tagsField,
 }
 

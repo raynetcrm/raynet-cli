@@ -138,6 +138,9 @@ type action struct {
 	tags bool
 	// body: the action accepts -f/-F/--input.
 	body bool
+	// staticBody: a fixed literal JSON body sent as-is, e.g.
+	// {"highlighted": true} on highlight.
+	staticBody map[string]any
 	// fields is the body's field reference for the action's help.
 	fields []field
 }
